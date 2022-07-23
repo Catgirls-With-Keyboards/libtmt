@@ -192,6 +192,8 @@ static inline void tmt_reset(TMT *vt);
 
 #define HANDLER(name) static inline void name (TMT *vt) { COMMON_VARS; 
 
+typedef enum {S_NUL, S_ESC, S_ARG}  TMT_PSTATE;
+
 struct TMT{
     TMTPOINT curs, oldcurs;
     TMTATTRS attrs, oldattrs;
@@ -211,7 +213,7 @@ struct TMT{
     size_t pars[PAR_MAX];   
     size_t npar;
     size_t arg;
-    enum {S_NUL, S_ESC, S_ARG} state;
+    TMT_PSTATE state;
 };
 
 static TMTATTRS defattrs = {.fg = TMT_COLOR_DEFAULT, .bg = TMT_COLOR_DEFAULT};
@@ -380,7 +382,8 @@ HANDLER(dsr)
 
 HANDLER(resetparser)
     memset(vt->pars, 0, sizeof(vt->pars));
-    vt->state = vt->npar = vt->arg = vt->ignored = (bool)0;
+    vt->state = S_NUL;
+    vt->npar = vt->arg = vt->ignored = (bool)0;
 }
 
 HANDLER(consumearg)
@@ -466,7 +469,7 @@ notify(TMT *vt, bool update, bool moved)
 static inline TMTLINE *
 allocline(TMT *vt, TMTLINE *o, size_t n, size_t pc)
 {
-    TMTLINE *l = realloc(o, sizeof(TMTLINE) + n * sizeof(TMTCHAR));
+    TMTLINE *l = (TMTLINE *)realloc(o, sizeof(TMTLINE) + n * sizeof(TMTCHAR));
     if (!l) return NULL;
 
     clearline(vt, l, pc, n);
@@ -487,8 +490,11 @@ static inline TMT *
 tmt_open(size_t nline, size_t ncol, TMTCALLBACK cb, void *p,
          const wchar_t *acs)
 {
-    TMT *vt = calloc(1, sizeof(TMT));
-    if (!nline || !ncol || !vt) return free(vt), NULL;
+    TMT *vt = (TMT*)calloc(1, sizeof(TMT));
+    if (!nline || !ncol || !vt){
+        free(vt);
+        return NULL;
+    }
 
     /* ASCII-safe defaults for box-drawing characters. */
     vt->acschars = acs? acs : L"><^v#+:o##+++++~---_++++|<>*!fo";
@@ -496,7 +502,10 @@ tmt_open(size_t nline, size_t ncol, TMTCALLBACK cb, void *p,
     vt->p = p;
     vt->attrs = vt->oldattrs = defattrs;
 
-    if (!tmt_resize(vt, nline, ncol)) return tmt_close(vt), NULL;
+    if (!tmt_resize(vt, nline, ncol)){
+        tmt_close(vt);
+        return NULL;
+    }  
     return vt;
 }
 
@@ -515,7 +524,7 @@ tmt_resize(TMT *vt, size_t nline, size_t ncol)
     if (nline < vt->screen.nline)
         freelines(vt, nline, vt->screen.nline - nline, false);
 
-    TMTLINE **l = realloc(vt->screen.lines, nline * sizeof(TMTLINE *));
+    TMTLINE **l = (TMTLINE **)realloc(vt->screen.lines, nline * sizeof(TMTLINE *));
     if (!l) return false;
 
     size_t pc = vt->screen.ncol;
