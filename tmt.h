@@ -79,12 +79,12 @@ typedef enum{
 
 typedef struct TMTATTRS TMTATTRS;
 struct TMTATTRS{
-    bool bold;
-    bool dim;
-    bool underline;
-    bool blink;
-    bool reverse;
-    bool invisible;
+    bool bold : 1;
+    bool dim : 1;
+    bool underline : 1;
+    bool blink : 1;
+    bool reverse : 1;
+    bool invisible : 1;
     tmt_color_t fg;
     tmt_color_t bg;
 };
