@@ -31,6 +31,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <wchar.h>
+#include <stdint.h>
 
 /**** INVALID WIDE CHARACTER */
 #ifndef TMT_INVALID_CHAR
@@ -64,30 +65,54 @@
 /**** BASIC DATA STRUCTURES */
 typedef struct TMT TMT;
 
+/* color definitions */
 typedef enum{
-    TMT_COLOR_DEFAULT = -1,
-    TMT_COLOR_BLACK = 1,
-    TMT_COLOR_RED,
-    TMT_COLOR_GREEN,
-    TMT_COLOR_YELLOW,
-    TMT_COLOR_BLUE,
-    TMT_COLOR_MAGENTA,
-    TMT_COLOR_CYAN,
-    TMT_COLOR_WHITE,
-    TMT_COLOR_MAX
+    TMT_ANSI_COLOR_BLACK = 30,
+    TMT_ANSI_COLOR_RED = 31,
+    TMT_ANSI_COLOR_GREEN = 32,
+    TMT_ANSI_COLOR_YELLOW = 33,
+    TMT_ANSI_COLOR_BLUE = 34,
+    TMT_ANSI_COLOR_MAGENTA = 35,
+    TMT_ANSI_COLOR_CYAN = 36,
+    TMT_ANSI_COLOR_WHITE = 37,
+    TMT_ANSI_COLOR_DEFAULT = 0,
+} ansi_color_t;
+
+typedef struct {
+  uint8_t r;
+  uint8_t g;
+  uint8_t b;
+  uint8_t ansi;
 } tmt_color_t;
 
-typedef struct TMTATTRS TMTATTRS;
-struct TMTATTRS{
-    bool bold : 1;
-    bool dim : 1;
-    bool underline : 1;
-    bool blink : 1;
-    bool reverse : 1;
-    bool invisible : 1;
-    tmt_color_t fg;
-    tmt_color_t bg;
-};
+#define TMT_COLOR_DEFAULT (tmt_color_t){  0,   0,   0, TMT_ANSI_COLOR_DEFAULT}
+#define TMT_COLOR_BLACK   (tmt_color_t){  0,   0,   0, TMT_ANSI_COLOR_BLACK}
+#define TMT_COLOR_RED     (tmt_color_t){255,   0,   0, TMT_ANSI_COLOR_RED}
+#define TMT_COLOR_GREEN   (tmt_color_t){  0, 255,   0, TMT_ANSI_COLOR_GREEN}
+#define TMT_COLOR_YELLOW  (tmt_color_t){  0,   0,   0, TMT_ANSI_COLOR_YELLOW}
+#define TMT_COLOR_BLUE    (tmt_color_t){  0,   0, 255, TMT_ANSI_COLOR_BLUE}
+#define TMT_COLOR_MAGENTA (tmt_color_t){  0,   0,   0, TMT_ANSI_COLOR_MAGENTA}
+#define TMT_COLOR_CYAN    (tmt_color_t){  0,   0,   0, TMT_ANSI_COLOR_CYAN}
+#define TMT_COLOR_WHITE   (tmt_color_t){255, 255, 255, TMT_ANSI_COLOR_WHITE}
+
+
+typedef struct  {
+  union {
+    struct {
+      bool bold : 1;
+      bool dim : 1;
+      bool underline : 1;
+      bool blink : 1;
+      bool reverse : 1;
+      bool invisible : 1;
+      bool _unused1 : 1;
+      bool _unused2 : 1;
+    };
+    uint8_t attrs;
+  };
+  tmt_color_t fg;
+  tmt_color_t bg;
+} TMTATTRS;
 
 typedef struct TMTCHAR TMTCHAR;
 struct TMTCHAR{
@@ -167,7 +192,6 @@ static inline void tmt_reset(TMT *vt);
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 #include <limits.h>
-#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
