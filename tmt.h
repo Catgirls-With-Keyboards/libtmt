@@ -97,6 +97,8 @@ typedef struct {
 
 
 typedef struct  {
+  tmt_color_t fg;
+  tmt_color_t bg;
   union {
     struct {
       bool bold : 1;
@@ -110,8 +112,6 @@ typedef struct  {
     };
     uint8_t attrs;
   };
-  tmt_color_t fg;
-  tmt_color_t bg;
 } TMTATTRS;
 
 typedef struct TMTCHAR TMTCHAR;
